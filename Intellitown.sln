@@ -1,0 +1,35 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31702.278
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Slave1", "Intellitown\Intellitown.vcxproj", "{C5F80730-F44F-4478-BDAE-6634EFC2CA88}"
+EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Master", "Master\Master.pyproj", "{1ADC7CEF-9DC7-46B2-99C1-2E4EDA9794E3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Debug|x86.ActiveCfg = Debug|Win32
+		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Debug|x86.Build.0 = Debug|Win32
+		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|Any CPU.ActiveCfg = Release|Win32
+		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|x86.ActiveCfg = Release|Win32
+		{C5F80730-F44F-4478-BDAE-6634EFC2CA88}.Release|x86.Build.0 = Release|Win32
+		{1ADC7CEF-9DC7-46B2-99C1-2E4EDA9794E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1ADC7CEF-9DC7-46B2-99C1-2E4EDA9794E3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1ADC7CEF-9DC7-46B2-99C1-2E4EDA9794E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1ADC7CEF-9DC7-46B2-99C1-2E4EDA9794E3}.Release|x86.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1CE487B1-0842-4739-9C71-A671B4F08323}
+	EndGlobalSection
+EndGlobal
