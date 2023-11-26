@@ -15,24 +15,27 @@ SignalHead::SignalHead(uint8_t redPin, uint8_t orangePin, uint8_t greenPin)
 	digitalWrite(greenPin, LOW);
 }
 
-void SignalHead::TurnRed() const
+void SignalHead::TurnRed()
 {
 	digitalWrite(redPin, HIGH);
 	digitalWrite(orangePin, LOW);
 	digitalWrite(greenPin, LOW);
+	currentColor = Colors::red;
 }
 
-void SignalHead::TurnOrange() const
+void SignalHead::TurnOrange()
 {
 	digitalWrite(redPin, LOW);
 	digitalWrite(orangePin, HIGH);
 	digitalWrite(greenPin, LOW);
+	currentColor = Colors::orange;
 }
 
-void SignalHead::TurnGreen() const
+void SignalHead::TurnGreen()
 {
 	digitalWrite(redPin, LOW);
 	digitalWrite(orangePin, LOW);
 	digitalWrite(greenPin, HIGH);
+	currentColor = Colors::green;
 }
 

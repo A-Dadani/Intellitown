@@ -4,12 +4,22 @@
 class SignalHead
 {
 public:
+	enum class Colors
+	{
+		none,
+		red,
+		orange,
+		green
+	};
+public:
 	SignalHead(uint8_t redPin, uint8_t orangePin, uint8_t greenPin);
-	void TurnRed() const;
-	void TurnOrange() const;
-	void TurnGreen() const;
+	void TurnRed();
+	void TurnOrange();
+	void TurnGreen();
+	Colors GetColor() const;
 private:
 	uint8_t redPin;
 	uint8_t orangePin;
 	uint8_t greenPin;
+	Colors currentColor = Colors::none;
 };
