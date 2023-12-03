@@ -12,12 +12,16 @@ public:
 		green
 	};
 public:
-	SignalHead(uint8_t redPin, uint8_t orangePin, uint8_t greenPin);
+	SignalHead(char selfID, uint8_t redPin, uint8_t orangePin, uint8_t greenPin);
 	void TurnRed();
 	void TurnOrange();
 	void TurnGreen();
 	Colors GetColor() const;
+	static void MarkAsReported();
+	static char GetIDToBeReported();
 private:
+	char ID;
+	static char IDToBeReported;
 	uint8_t redPin;
 	uint8_t orangePin;
 	uint8_t greenPin;
