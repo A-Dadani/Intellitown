@@ -91,12 +91,12 @@ void OnRequest()
 void OnReceive(int)
 {
 	byte receivedData[RECEIVE_BUFFER_LIMIT];
+	Wire.read();
 	for (int i = 0; i < RECEIVE_BUFFER_LIMIT && Wire.available(); ++i)
 	{
 		receivedData[i] = Wire.read();
 	}
-
-	if (receivedData[0] == 0)
+	if (receivedData[0] == 1)
 	{
 		if (receivedData[1] == 'n')
 		{
@@ -140,6 +140,23 @@ void OnReceive(int)
 		}
 		else if (receivedData[1] == 's')
 		{
+			if (receivedData[2] == 'n')
+			{
+				switch (receivedData[3])
+				{
+				case 0:
+					XXRGLED.TurnGreen();
+					break;
+				case 1:
+					XXRGLED.TurnOrange();
+					break;
+				case 2:
+					XXRGLED.TurnRed();
+					break;
+				default:
+					return;
+				}
+			}
 		}
 		else if (receivedData[1] == 'w')
 		{
