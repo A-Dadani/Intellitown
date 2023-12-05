@@ -1,5 +1,6 @@
 #include <Wire.h>
 #include <stdint.h>
+#include <Arduino_FreeRTOS.h>
 #include "RGLed.h"
 #include "SignalHead.h"
 
@@ -25,46 +26,48 @@ void setup()
 	Wire.begin(selfI2CAddr);
 	Wire.onReceive(OnReceive);
 	Wire.onRequest(OnRequest);
+
+	xTaskCreate(TraditionalTrafficLightsTask, "Traditional Traffic Lights", 128, NULL, 1, NULL);
+	vTaskStartScheduler();
 }
 
-void loop()
+void TraditionalTrafficLightsTask(void* pvParameters)
 {
-#pragma region Traditional Traffic Lights
-	if (millis() - currRotationStartTime > 14000) currRotationStartTime = millis();
-	
-	if (millis() - currRotationStartTime < 5000)
+	while (true)
 	{
-		NSSignal.TurnGreen();
-		EWSignal.TurnRed();
-	}
-	else if (millis() - currRotationStartTime < 6000)
-	{
-		NSSignal.TurnOrange();
-		EWSignal.TurnRed();
-	}
-	else if (millis() - currRotationStartTime < 7000)
-	{
-		NSSignal.TurnRed();
-		EWSignal.TurnRed();
-	}
-	else if (millis() - currRotationStartTime < 12000)
-	{
-		NSSignal.TurnRed();
-		EWSignal.TurnGreen();
-	}
-	else if (millis() - currRotationStartTime < 13000)
-	{
-		NSSignal.TurnRed();
-		EWSignal.TurnOrange();
-	}
-	else if (millis() - currRotationStartTime <= 14000)
-	{
-		NSSignal.TurnRed();
-		EWSignal.TurnRed();
-	}
-#pragma endregion 
+		if (millis() - currRotationStartTime > 14000) currRotationStartTime = millis();
 
-
+		if (millis() - currRotationStartTime < 5000)
+		{
+			NSSignal.TurnGreen();
+			EWSignal.TurnRed();
+		}
+		else if (millis() - currRotationStartTime < 6000)
+		{
+			NSSignal.TurnOrange();
+			EWSignal.TurnRed();
+		}
+		else if (millis() - currRotationStartTime < 7000)
+		{
+			NSSignal.TurnRed();
+			EWSignal.TurnRed();
+		}
+		else if (millis() - currRotationStartTime < 12000)
+		{
+			NSSignal.TurnRed();
+			EWSignal.TurnGreen();
+		}
+		else if (millis() - currRotationStartTime < 13000)
+		{
+			NSSignal.TurnRed();
+			EWSignal.TurnOrange();
+		}
+		else if (millis() - currRotationStartTime <= 14000)
+		{
+			NSSignal.TurnRed();
+			EWSignal.TurnRed();
+		}
+	}
 }
 
 void OnRequest()
@@ -180,3 +183,6 @@ void OnReceive(int)
 		}
 	}
 }
+
+void loop()
+{  }
