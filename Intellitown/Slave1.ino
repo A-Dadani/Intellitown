@@ -1,14 +1,29 @@
 #include <Wire.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <Arduino_FreeRTOS.h>
+#include <stdlib.h>
 #include "RGLed.h"
 #include "SignalHead.h"
+#include "Accelerometer.h"
 
-#define SEND_BUFFER_SIZE 3
-#define RECEIVE_BUFFER_LIMIT 4
 #define SELF_ID 's'
 
+#pragma region I2C COM LIMITS
+#define SEND_BUFFER_SIZE 3
+#define RECEIVE_BUFFER_LIMIT 4
+#pragma endregion
+
+#pragma region BUZZER
+#define BUZZER_PIN 6
+#define BUZZER_LOWER 120
+#define BUZZER_HIGHER 255
+#pragma endregion
+
+#define EARTHQUAKE_ACCELERATION_THRESHOLD 20
+
 uint8_t selfI2CAddr = 0x8;
+
 unsigned long currRotationStartTime = 0ul;
 RGLed NSRGLED(22, 2);
 RGLed EWRGLED(23, 3);
@@ -16,6 +31,7 @@ RGLed WERGLED(24, 4);
 RGLed XXRGLED(25, 5);
 SignalHead NSSignal('n', 50, 49, 48);
 SignalHead EWSignal('e', 53, 52, 51);
+Accelerometer accelero1(A0, A1, A2);
 
 void OnReceive(int);
 
@@ -23,11 +39,16 @@ void OnRequest();
 
 void setup()
 {
+	Serial.begin(9600);
 	Wire.begin(selfI2CAddr);
 	Wire.onReceive(OnReceive);
 	Wire.onRequest(OnRequest);
 
+	pinMode(BUZZER_PIN, OUTPUT);
+
 	xTaskCreate(TraditionalTrafficLightsTask, "Traditional Traffic Lights", 128, NULL, 1, NULL);
+	xTaskCreate(ReportAccelerometerValuesTask, "Traditional Traffic Lights", 128, NULL, 1, NULL);
+
 	vTaskStartScheduler();
 }
 
@@ -67,6 +88,44 @@ void TraditionalTrafficLightsTask(void* pvParameters)
 			NSSignal.TurnRed();
 			EWSignal.TurnRed();
 		}
+	}
+}
+
+void ReportAccelerometerValuesTask(void* pvParameters)
+{
+	unsigned long crisisStartTime = 0;
+	short int lastXG = -1;
+	short int lastYG = -1;
+	while (true)
+	{
+		unsigned long currentTime = millis();
+		short int xG = accelero1.GetXAcceleration();
+		short int yG = accelero1.GetYAcceleration();
+		if (lastXG != -1
+			&& lastYG != -1
+			&& (abs(xG - lastXG) > EARTHQUAKE_ACCELERATION_THRESHOLD || abs(yG - lastYG) > EARTHQUAKE_ACCELERATION_THRESHOLD))
+		{
+			crisisStartTime = currentTime;
+		}
+
+		if (currentTime - crisisStartTime < 3000)
+		{
+			if (currentTime % 500 < 250)
+			{
+				analogWrite(BUZZER_PIN, BUZZER_LOWER);
+			}
+			else
+			{
+				analogWrite(BUZZER_PIN, BUZZER_HIGHER);
+			}
+		}
+		else
+		{
+			digitalWrite(BUZZER_PIN, LOW);
+		}
+		lastXG = xG;
+		lastYG = yG;
+		delay(100);
 	}
 }
 
