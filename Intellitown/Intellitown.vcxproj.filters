@@ -16,6 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Slave1.ino" />
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="__vm\.Intellitown.vsarduino.h">
