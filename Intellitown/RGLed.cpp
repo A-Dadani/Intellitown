@@ -9,7 +9,7 @@ RGLed::RGLed(uint8_t redPin, uint8_t greenPin)
 {
 	pinMode(redPin, OUTPUT);
 	pinMode(greenPin, OUTPUT);
-	TurnOff();
+	TurnGreen();
 }
 
 void RGLed::TurnRed() const

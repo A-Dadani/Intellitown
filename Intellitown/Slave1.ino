@@ -26,7 +26,7 @@ uint8_t selfI2CAddr = 0x8;
 
 unsigned long currRotationStartTime = 0ul;
 RGLed NSRGLED(22, 2);
-RGLed EWRGLED(23, 3);
+RGLed EWRGLED(23, 7);
 RGLed WERGLED(24, 4);
 RGLed XXRGLED(25, 5);
 SignalHead NSSignal('n', 50, 49, 48);

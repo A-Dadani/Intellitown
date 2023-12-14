@@ -5,9 +5,15 @@ import time
 import base64
 import random
 from PIL import Image
+import requests
+import json
+import datetime
+import traceback
 
 runningThreads = []
 slaveSI2CAddress = 0x8
+
+i2c_lock = threading.Lock()
 
 mqtt_broker_ip = "192.168.193.114"
 mqtt_port = 1883
@@ -48,6 +54,10 @@ SNLock = threading.Lock()
 SELock = threading.Lock()
 SWLock = threading.Lock()
 
+url = 'https://myapp-ckfcrjehrq-ew.a.run.app/detect'
+
+bus = smbus.SMBus(1)
+
 def connect_mqtt():
     def on_connect(client, userdata, flags, rc):
         if rc == 0:
@@ -73,11 +83,13 @@ def connect_mqtt():
     return client
 
 def on_message(client, userdata, msg):
+    global mqtt_isNSreceived, mqtt_isEWreceived, mqtt_isWEreceived, mqtt_isSNreceived, mqtt_isSEreceived, mqtt_isSWreceived
     if msg.topic == mqtt_NS_response:
         save_base64_image(msg.payload.decode('utf-8'), mqtt_NS_image_path)
         print(f"Image received NS")
         with NSLock:
             mqtt_isNSreceived = True
+        print("set flag")
     elif msg.topic == mqtt_EW_response:
         save_base64_image(msg.payload.decode('utf-8'), mqtt_EW_image_path)
         print(f"Image received EW")
@@ -113,26 +125,31 @@ def save_base64_image(base64_string, filename):
     with open(filename, "wb") as image_file:
         image_file.write(image_data)
 
-def get_base64_image(filepath):
-    with open(filepath, "rb") as f:
-        image = Image.open(f)
-        rotated_image = image.rotate(90)
-        rotated_image_data = rotated_image.tobytes()
-        base64_encoded = base64.b64encode(rotated_image_data)
-        return base64_encoded.decode('utf-8')
+def get_base64_image(image_path):
+    with open(image_path, "rb") as image_file:
+        encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+    return encoded_string
 
-######### TEMPORARY FOR TESTING ###############
 def computeBusiness(base64_img_string):
-    time.sleep(2)
-    return random.randint(0, 2)
-####################################################
+    payload = json.dumps({
+        "image": base64_img_string
+    })
+
+    headers = {
+        'Content-Type': 'application/json'
+    }
+    print("Sending request...")
+    response = requests.post(url, headers=headers, data=payload)
+    print(response.json()['vehicle_count'])
+    return response.json()['vehicle_count'];
 
 def ProcessData(receivedString):
+    global mqtt_isNSreceived, mqtt_isEWreceived, mqtt_isWEreceived, mqtt_isSNreceived, mqtt_isSEreceived, mqtt_isSWreceived
     verdict = [0, 0, 0, 0]
     verdict[0] = 1
     print("in thread : ", receivedString)
-
-    verdict[1] = ord(receivedString[1])
+    verdict[1] = ord(receivedString[0])
+    verdict[2] = ord(receivedString[1])
 
     img = None
 
@@ -168,17 +185,20 @@ def ProcessData(receivedString):
                 mqtt_isEWreceived = False
             while not mqtt_isEWreceived:
                 pass
+            print("EW PASSED")
             img = get_base64_image(mqtt_EW_image_path)
         else: 
             print("Warning! unsupported request")
             return
     elif receivedString[0] == 'n':
         if receivedString[1] == 's':
+            print("in north south")
             client.publish(mqtt_NS_request, payload="capture_photo")
             with NSLock:
                 mqtt_isNSreceived = False
             while not mqtt_isNSreceived:
                 pass
+            print("passed NS")
             img = get_base64_image(mqtt_NS_image_path)
         else: 
             print("Warning! unsupported request")
@@ -199,48 +219,40 @@ def ProcessData(receivedString):
 
     # image should be received and saved to variable img
 
-    ######### TEMPORARY FOR TESTING ###############
+    print("about to compute business")
     business = computeBusiness(img)
-    ####################################################
 
-    verdict[3] = business
-    
+    if business == 0:
+        verdict[3] = 0
+    elif business == 1:
+        verdict[3] = 1
+    else:
+        verdict[3] = 2    
 
     print("Sending ", verdict, " to slave with address, ", slaveSI2CAddress)
-    #bus.write_i2c_block_data(slaveSI2CAddress, 0, verdict)
+    with i2c_lock:
+        bus.write_i2c_block_data(slaveSI2CAddress, 0, verdict)
     time.sleep(0.2)
-    bus.close()
     current_thread = threading.current_thread()
     runningThreads.remove(current_thread)
 
 def main():
-    bus = smbus.SMBus(1)
-    received_data = bus.read_i2c_block_data(slaveSI2CAddress, 0, 3)
+    with i2c_lock:
+        received_data = bus.read_i2c_block_data(slaveSI2CAddress, 0, 3)
     print("outside : ", received_data)
     
     if (received_data[0] == 1):
         if chr(received_data[2]) == 'n':
-            i2cThread1 = threading.Thread(target=ProcessData, args=(chr(received_data[1]) + 'n',))
+            i2cThread1 = threading.Thread(target=ProcessData, args=('ns',))
             i2cThread1.start()
             runningThreads.append(i2cThread1)
-            i2cThread2 = threading.Thread(target=ProcessData, args=(chr(received_data[1]) + 's',))
-            i2cThread2.start()
-            runningThreads.append(i2cThread2)
         elif chr(received_data[2]) == 'e':
-            i2cThread1 = threading.Thread(target=ProcessData, args=(chr(received_data[1]) + 'e',))
+            i2cThread1 = threading.Thread(target=ProcessData, args=('ew',))
             i2cThread1.start()
             runningThreads.append(i2cThread1)
-            i2cThread2 = threading.Thread(target=ProcessData, args=(chr(received_data[1]) + 'w',))
+            i2cThread2 = threading.Thread(target=ProcessData, args=('we',))
             i2cThread2.start()
             runningThreads.append(i2cThread2)
-                 
-               
-#    i2cThread1 = threading.Thread(target=ProcessData, args=("sn",))
-#    i2cThread1.start()
-#    runningThreads.append(i2cThread1)
-#    print("Main thread sleeping...")
-#    time.sleep(5)
-#    print("Main thread wakes up")
 
 if __name__ == '__main__':
     try:
@@ -250,7 +262,8 @@ if __name__ == '__main__':
             except KeyboardInterrupt:
                 raise
             except Exception as Ex:
-                print(Ex)
+                #print(Ex)
+                traceback.print_exc()
             time.sleep(0.4)
     except KeyboardInterrupt:
         print("Keyboard interrupt detected, stopping...")
