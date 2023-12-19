@@ -40,12 +40,12 @@ mqtt_SN_image_path = "intersectionSN.jpg"
 mqtt_SE_image_path = "intersectionSE.jpg"
 mqtt_SW_image_path = "intersectionSW.jpg"
 
-mqtt_isNSreceived = False
-mqtt_isEWreceived = False
-mqtt_isWEreceived = False
-mqtt_isSNreceived = False
-mqtt_isSEreceived = False
-mqtt_isSWreceived = False
+mqtt_isNSreceived = True
+mqtt_isEWreceived = True
+mqtt_isWEreceived = True
+mqtt_isSNreceived = True
+mqtt_isSEreceived = True
+mqtt_isSWreceived = True
 
 NSLock = threading.Lock()
 EWLock = threading.Lock()
@@ -153,38 +153,21 @@ def ProcessData(receivedString):
 
     img = None
 
-    if receivedString[0] == 's':
-        if receivedString[1] == 'n':
-            client.publish(mqtt_SN_request, payload="capture_photo")
-            with SNLock:
-                mqtt_isSNreceived = False
-            while not mqtt_isSNreceived:
-                pass
-            img = get_base64_image(mqtt_SN_image_path)
-        elif receivedString[1] == 'e':
-            client.publish(mqtt_SE_request, payload="capture_photo")
-            with SELock:
-                mqtt_isSEreceived = False
-            while not mqtt_isSEreceived:
-                pass
-            img = get_base64_image(mqtt_SE_image_path)
-        elif receivedString[1] == 'w':
-            client.publish(mqtt_SW_request, payload="capture_photo")
-            with SWLock:
-                mqtt_isSWreceived = False
-            while not mqtt_isSWreceived:
-                pass
-            img = get_base64_image(mqtt_SW_image_path)
-        else: 
-            print("Warning! unsupported request")
-            return
-    elif receivedString[0] == 'e':
+    
+    if receivedString[0] == 'e':
         if receivedString[1] == 'w':
             client.publish(mqtt_EW_request, payload="capture_photo")
+            EW_start_time = datetime.datetime.now()
             with EWLock:
                 mqtt_isEWreceived = False
             while not mqtt_isEWreceived:
-                pass
+                elapsed_time = datetime.datetime.now() - EW_start_time
+                if elapsed_time.total_seconds() > 10:
+                    print("EW timed out")
+                    mqtt_isEWreceived = True
+                    current_thread = threading.current_thread()
+                    runningThreads.remove(current_thread)
+                    return
             print("EW PASSED")
             img = get_base64_image(mqtt_EW_image_path)
         else: 
@@ -194,10 +177,17 @@ def ProcessData(receivedString):
         if receivedString[1] == 's':
             print("in north south")
             client.publish(mqtt_NS_request, payload="capture_photo")
+            NS_start_time = datetime.datetime.now()
             with NSLock:
                 mqtt_isNSreceived = False
             while not mqtt_isNSreceived:
-                pass
+                elapsed_time = datetime.datetime.now() - NS_start_time
+                if elapsed_time.total_seconds() > 10:
+                    print("NS timed out")
+                    mqtt_isNSreceived = True
+                    current_thread = threading.current_thread()
+                    runningThreads.remove(current_thread)
+                    return
             print("passed NS")
             img = get_base64_image(mqtt_NS_image_path)
         else: 
@@ -206,16 +196,24 @@ def ProcessData(receivedString):
     elif receivedString[0] == 'w':
         if receivedString[1] == 'e':
             client.publish(mqtt_WE_request, payload="capture_photo")
+            WE_start_time = datetime.datetime.now()
             with WELock:
                 mqtt_isWEreceived = False
             while not mqtt_isWEreceived:
-                pass
+                elapsed_time = datetime.datetime.now() - WE_start_time
+                if elapsed_time.total_seconds() > 10:
+                    print("WE timed out")
+                    mqtt_isWEreceived = True
+                    current_thread = threading.current_thread()
+                    runningThreads.remove(current_thread)
+                    return
             img = get_base64_image(mqtt_WE_image_path)
         else:
             print("Warning! unsupported request")
             return
     else:
         print("Warning! unsupported request")
+        return
 
     # image should be received and saved to variable img
 
@@ -243,16 +241,19 @@ def main():
     
     if (received_data[0] == 1):
         if chr(received_data[2]) == 'n':
-            i2cThread1 = threading.Thread(target=ProcessData, args=('ns',))
-            i2cThread1.start()
-            runningThreads.append(i2cThread1)
+            if mqtt_isNSreceived:
+                i2cThread1 = threading.Thread(target=ProcessData, args=('ns',))
+                i2cThread1.start()
+                runningThreads.append(i2cThread1)
         elif chr(received_data[2]) == 'e':
-            i2cThread1 = threading.Thread(target=ProcessData, args=('ew',))
-            i2cThread1.start()
-            runningThreads.append(i2cThread1)
-            i2cThread2 = threading.Thread(target=ProcessData, args=('we',))
-            i2cThread2.start()
-            runningThreads.append(i2cThread2)
+            if mqtt_isEWreceived:
+                i2cThread1 = threading.Thread(target=ProcessData, args=('ew',))
+                i2cThread1.start()
+                runningThreads.append(i2cThread1)
+            if mqtt_isWEreceived:
+                i2cThread2 = threading.Thread(target=ProcessData, args=('we',))
+                i2cThread2.start()
+                runningThreads.append(i2cThread2)
 
 if __name__ == '__main__':
     try:

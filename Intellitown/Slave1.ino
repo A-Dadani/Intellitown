@@ -20,7 +20,7 @@
 #define BUZZER_HIGHER 255
 #pragma endregion
 
-#define EARTHQUAKE_ACCELERATION_THRESHOLD 20
+#define EARTHQUAKE_ACCELERATION_THRESHOLD 50
 
 uint8_t selfI2CAddr = 0x8;
 
@@ -96,14 +96,26 @@ void ReportAccelerometerValuesTask(void* pvParameters)
 	unsigned long crisisStartTime = 0;
 	short int lastXG = -1;
 	short int lastYG = -1;
+	short int lastZG = -1;
 	while (true)
 	{
 		unsigned long currentTime = millis();
 		short int xG = accelero1.GetXAcceleration();
 		short int yG = accelero1.GetYAcceleration();
+		short int zG = accelero1.GetZAcceleration();
+		Serial.print(xG);
+		Serial.print(":");
+		Serial.print(yG);
+		Serial.print(":");
+		Serial.print(zG);
+		Serial.println();
 		if (lastXG != -1
 			&& lastYG != -1
-			&& (abs(xG - lastXG) > EARTHQUAKE_ACCELERATION_THRESHOLD || abs(yG - lastYG) > EARTHQUAKE_ACCELERATION_THRESHOLD))
+			&& lastZG != -1
+			&& (abs(xG - lastXG) > EARTHQUAKE_ACCELERATION_THRESHOLD 
+				|| abs(yG - lastYG) > EARTHQUAKE_ACCELERATION_THRESHOLD
+				|| abs(zG - lastZG) > EARTHQUAKE_ACCELERATION_THRESHOLD)
+			&& currentTime - crisisStartTime > 4500)
 		{
 			crisisStartTime = currentTime;
 		}
@@ -125,6 +137,7 @@ void ReportAccelerometerValuesTask(void* pvParameters)
 		}
 		lastXG = xG;
 		lastYG = yG;
+		lastZG = zG;
 		delay(100);
 	}
 }

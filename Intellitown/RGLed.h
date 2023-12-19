@@ -13,6 +13,6 @@ public:
 private:
 	uint8_t redPin;
 	uint8_t greenPin;
-	static constexpr uint8_t greenAmountinOrange = 9;
+	static constexpr uint8_t greenAmountinOrange = 25;
 	static constexpr uint8_t greenBrightness = 70;
 };
